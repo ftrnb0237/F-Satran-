@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#12151c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Satranç">
+<title>Satranç v1.5</title>
+<link rel="manifest" href="manifest.json">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+<style>
+:root{
+  --bg:#12151c;--panel:#1b2029;--panel2:#232a36;--accent:#4f8cff;--accent2:#2ecc71;
+  --gold:#f1c40f;--danger:#e74c3c;--text:#eef1f6;--muted:#8a93a6;
+  --light-sq:#eddfc4;--dark-sq:#7d5a3c;--radius:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;margin:0;background:#0c0e13;color:var(--text);font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif;overflow-x:hidden;}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;background:#0c0e13;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;}
+#splash-canvas{width:160px;height:160px;}
+.splash-ver{color:var(--muted);font-size:.9rem;margin-top:12px;letter-spacing:2px;}
+
+#app{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding-bottom:68px;}
+.screen{display:none;flex-direction:column;flex:1;padding:14px;animation:fade .2s ease;}
+.screen.active{display:flex;}
+@keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;}}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 2px 12px;}
+h1{margin:0;font-size:1.3rem;}h2{margin:0 0 10px;font-size:1.1rem;color:var(--accent);}h3{margin:0 0 8px;font-size:1rem;}
+.card{background:var(--panel);border-radius:var(--radius);padding:14px;margin-bottom:12px;border:1px solid #232a38;}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:13px 16px;font-size:.95rem;font-weight:600;cursor:pointer;width:100%;margin-bottom:8px;transition:.15s;display:block;text-align:center;}
+.btn:active{transform:scale(.97);}.btn.sec{background:var(--panel2);color:var(--text);border:1px solid #37415a;}
+.btn.grn{background:var(--accent2);color:#04331a;}.btn.red{background:var(--danger);}
+.btn.gold{background:var(--gold);color:#1a1200;}.btn:disabled{opacity:.4;cursor:not-allowed;}
+.row{display:flex;gap:8px;}.row>.btn{flex:1;}
+input[type=text],input[type=password]{width:100%;background:var(--panel2);border:1px solid #37415a;color:var(--text);padding:11px;border-radius:10px;font-size:.95rem;margin-bottom:10px;outline:none;}
+input:focus{border-color:var(--accent);}
+.ibb{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.ibb input{margin-bottom:0;flex:1;}.ibb .btn{width:auto;white-space:nowrap;margin-bottom:0;padding:11px 14px;}
+.muted{color:var(--muted);font-size:.82rem;}.err{color:var(--danger);font-size:.82rem;margin:-6px 0 8px;display:none;}
+.pill{background:var(--panel2);padding:6px 12px;border-radius:20px;font-size:.82rem;display:inline-block;}
+.pill.lg{font-size:1.1rem;font-family:monospace;padding:8px 16px;}
+.banner{background:#26334a;border:1px solid #375077;padding:10px 12px;border-radius:10px;font-size:.8rem;color:#bcd0ee;margin-bottom:10px;}
+.banner.ok{background:#1c3a28;border-color:#2e7d52;color:#6edfa4;}
+.icon-btn{background:var(--panel2);border:1px solid #2f3a4d;color:var(--text);border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;flex-shrink:0;}
+.icon-btn.on{background:var(--accent2);color:#04331a;border-color:var(--accent2);animation:pulse 1.2s infinite;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(46,204,113,.6);}70%{box-shadow:0 0 0 10px rgba(46,204,113,0);}100%{box-shadow:0 0 0 0 rgba(46,204,113,0);}}
+.av{overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--panel2);border-radius:50%;flex-shrink:0;}
+.av img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.profile-badge{display:flex;align-items:center;gap:10px;}
+.avatar-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:10px;}
+.av-opt{font-size:1.5rem;text-align:center;padding:7px 0;border-radius:8px;background:var(--panel2);cursor:pointer;border:2px solid transparent;}
+.av-opt.sel{border-color:var(--accent);background:#26334a;}
+
+/* LEVEL BAR */
+.level-bar-wrap{background:var(--panel2);border-radius:20px;height:8px;margin:6px 0 2px;overflow:hidden;}
+.level-bar{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s;}
+.level-badge{display:inline-flex;align-items:center;gap:6px;background:#26334a;border-radius:20px;padding:4px 10px;font-size:.82rem;font-weight:700;color:var(--gold);}
+
+/* COINS */
+.coins-display{display:inline-flex;align-items:center;gap:4px;background:#26334a;border-radius:20px;padding:4px 10px;font-size:.88rem;font-weight:700;color:var(--gold);}
+
+/* BOARD */
+#board-wrap{display:flex;justify-content:center;margin:8px 0;}
+#board{display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);width:min(90vw,420px);height:min(90vw,420px);border-radius:8px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.5);}
+.sq{position:relative;display:flex;align-items:center;justify-content:center;font-size:min(7vw,32px);cursor:pointer;user-select:none;}
+.sq.light{background:var(--light-sq);}.sq.dark{background:var(--dark-sq);}
+.sq.sel2{box-shadow:inset 0 0 0 3px var(--accent);}.sq.last{background:#c9a24a88;}
+.sq .dot{position:absolute;width:28%;height:28%;border-radius:50%;background:rgba(46,204,113,.85);}
+.sq .dot.cap{width:100%;height:100%;background:transparent;box-shadow:inset 0 0 0 4px rgba(231,76,60,.8);}
+.sq.chk{box-shadow:inset 0 0 0 4px var(--danger);}
+.pw{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8);}.pb{color:#111;text-shadow:0 1px 2px rgba(255,255,255,.3);}
+.movelist{max-height:80px;overflow-y:auto;background:var(--panel2);border-radius:8px;padding:8px;font-size:.78rem;font-family:monospace;margin-top:8px;}
+.status-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:6px;}
+
+/* ANTIQUES SHOP */
+.shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.shop-item{background:var(--panel2);border-radius:12px;padding:12px;text-align:center;border:2px solid transparent;cursor:pointer;}
+.shop-item.owned{border-color:var(--accent2);}.shop-item.equipped{border-color:var(--gold);}
+.shop-item .si-icon{font-size:2.2rem;margin-bottom:6px;}
+.shop-item .si-name{font-weight:700;font-size:.88rem;}
+.shop-item .si-price{color:var(--gold);font-size:.8rem;margin-top:4px;}
+.shop-item .si-badge{font-size:.72rem;color:var(--accent2);}
+
+/* FRIENDS / CHAT */
+.friend-item{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid #232a38;border-radius:12px;padding:12px;margin-bottom:10px;cursor:pointer;}
+.friend-item .av{width:42px;height:42px;font-size:1.5rem;}
+.fi-name{font-weight:700;font-size:.95rem;}.fi-last{font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px;}
+.chat-box{flex:1;display:flex;flex-direction:column;background:var(--panel2);border-radius:12px;padding:10px;overflow-y:auto;margin-bottom:10px;min-height:260px;max-height:55vh;}
+.msg{max-width:76%;padding:8px 12px;border-radius:14px;margin-bottom:8px;font-size:.9rem;word-wrap:break-word;}
+.msg.me{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:3px;}
+.msg.them{align-self:flex-start;background:#2c3547;border-bottom-left-radius:3px;}
+.msg img{max-width:100%;border-radius:8px;display:block;margin-top:4px;}
+.chat-row{display:flex;gap:8px;align-items:center;}.chat-row input{margin-bottom:0;flex:1;}
+
+/* TABBAR */
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:flex;gap:4px;padding:6px 8px;background:#12151ced;backdrop-filter:blur(10px);border-top:1px solid #232a38;z-index:20;}
+.tab-btn{flex:1;background:var(--panel);border:1px solid #232a38;border-radius:10px;padding:8px 2px;text-align:center;font-size:.65rem;color:var(--muted);cursor:pointer;}
+.tab-btn.active{color:var(--accent);border-color:var(--accent);background:#1b2536;}
+.tab-btn .ti{font-size:1.1rem;display:block;}
+
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(5,7,12,.85);display:none;align-items:center;justify-content:center;z-index:50;padding:16px;}
+.modal-overlay.active{display:flex;}
+.modal{background:var(--panel);border-radius:var(--radius);padding:20px;width:100%;max-width:400px;border:1px solid #2f3a4d;max-height:90vh;overflow-y:auto;}
+.modal.center{text-align:center;}
+.lang-list{max-height:260px;overflow-y:auto;}
+.lang-item{padding:10px 12px;border-radius:8px;cursor:pointer;}
+.lang-item:hover{background:var(--panel2);}
+.lang-item.active{background:#26334a;color:var(--accent);font-weight:700;}
+.lang-item.pinned{border-bottom:1px solid #2f3a4d;margin-bottom:6px;padding-bottom:12px;}
+.diff-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.diff-btn{padding:14px 4px;border-radius:10px;background:var(--panel2);border:2px solid transparent;text-align:center;cursor:pointer;font-size:.88rem;}
+.diff-btn.easy.sel3{border-color:var(--accent2);}.diff-btn.medium.sel3{border-color:#f1c40f;}.diff-btn.hard.sel3{border-color:var(--danger);}
+.promo-choices{display:flex;gap:10px;justify-content:center;margin-top:10px;}
+.promo-choices .sq{width:56px;height:56px;background:var(--panel2);border-radius:10px;font-size:2rem;}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#222c3d;border:1px solid #3a4560;color:var(--text);padding:9px 16px;border-radius:10px;font-size:.83rem;z-index:99;max-width:88%;}
+.conn-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#555;margin-right:5px;}
+.conn-dot.online{background:var(--accent2);}.conn-dot.waiting{background:#f1c40f;animation:blink .8s step-end infinite;}.conn-dot.err3{background:var(--danger);}
+@keyframes blink{50%{opacity:0;}}
+hr{border:none;border-top:1px solid #232a38;margin:12px 0;}
+</style>
+</head>
+<body>
+
+<!-- SPLASH SCREEN -->
+<div id="splash">
+  <canvas id="splash-canvas" width="160" height="160"></canvas>
+  <div class="splash-ver">SATRANÇ v1.5</div>
+</div>
+
+<div id="app" style="display:none;">
+
+<!-- ONBOARDING -->
+<div class="screen" id="sc-onboard">
+  <div class="topbar"><div style="font-weight:700;font-size:1.2rem;">♞ Satranç</div></div>
+  <div class="card">
+    <h2>Hoş geldin!</h2>
+    <p class="muted">Devam etmek için profil oluştur.</p>
+    <label class="muted">Kullanıcı adı</label>
+    <input type="text" id="ob-name" maxlength="18" placeholder="ornek_ad_01">
+    <div class="err" id="ob-err"></div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
+      <div class="av" id="ob-av-preview" style="width:54px;height:54px;font-size:2rem;">😀</div>
+      <button class="btn sec" style="width:auto;margin:0;" id="ob-gallery-btn">🖼️ Galeriden Seç</button>
+      <input type="file" id="ob-gallery-file" accept="image/*" style="display:none;">
+    </div>
+    <div class="avatar-grid" id="ob-av-grid"></div>
+    <button class="btn grn" id="ob-save">Kaydet & Başla</button>
+  </div>
+</div>
+
+<!-- MAIN MENU -->
+<div class="screen" id="sc-menu">
+  <div class="topbar">
+    <div style="font-weight:700;font-size:1.1rem;">♞ Satranç <span style="color:var(--muted);font-size:.75rem;">v1.5</span></div>
+    <div style="display:flex;gap:8px;">
+      <div class="icon-btn" id="mic-btn" title="Mikrofon">🎤</div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="av" id="menu-av" style="width:48px;height:48px;font-size:1.8rem;"></div>
+      <div style="flex:1;">
+        <div style="font-weight:700;" id="menu-name">—</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap;">
+          <div class="level-badge" id="menu-level">⭐ Sev. 1</div>
+          <div class="coins-display" id="menu-coins">🪙 0</div>
+        </div>
+        <div class="level-bar-wrap" style="margin-top:6px;">
+          <div class="level-bar" id="menu-level-bar" style="width:0%"></div>
+        </div>
+        <div class="muted" id="menu-xp-text" style="margin-top:2px;">0 / 20 kazanma</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Çevrimdışı Oyna</h2>
+    <button class="btn" id="btn-vs-ai">Bilgisayara Karşı</button>
+    <button class="btn sec" id="btn-2p">2 Kişilik (Aynı Cihaz)</button>
+  </div>
+
+  <div class="card">
+    <h2>Çevrimiçi Oyna <span class="pill" id="peer-status-pill">⏳</span></h2>
+    <div class="banner" id="peer-banner">Bağlanıyor...</div>
+    <button class="btn grn" id="btn-create-room" disabled>🚪 Oda Oluştur</button>
+    <div class="ibb">
+      <input type="text" id="join-id-input" placeholder="Oda ID'sini gir" style="text-transform:uppercase;">
+      <button class="btn sec" id="btn-join-room" disabled>Katıl</button>
+    </div>
+    <hr>
+    <button class="btn sec" id="btn-quickmatch">🤖 Hızlı Eşleşme (Bot)</button>
+  </div>
+</div>
+
+<!-- DIFFICULTY -->
+<div class="screen" id="sc-diff">
+  <div class="topbar">
+    <div class="icon-btn" id="diff-back">←</div>
+    <h1>Zorluk Seç</h1>
+    <div style="width:42px;"></div>
+  </div>
+  <div class="card">
+    <div class="diff-grid">
+      <div class="diff-btn easy" data-d="easy"><div>🟢</div>Kolay</div>
+      <div class="diff-btn medium sel3" data-d="medium"><div>🟡</div>Orta</div>
+      <div class="diff-btn hard" data-d="hard"><div>🔴</div>Zor</div>
+    </div>
+    <button class="btn grn" id="diff-start">Başla</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="sc-game">
+  <div class="topbar">
+    <div class="icon-btn" id="game-back">←</div>
+    <div class="pill" id="game-mode-label">—</div>
+    <div class="icon-btn" id="game-mic-btn">🎤</div>
+  </div>
+  <div class="status-bar">
+    <div class="pill" id="turn-pill">—</div>
+    <div class="pill" id="online-opp-pill" style="display:none;"></div>
+  </div>
+  <div id="board-wrap"><div id="board"></div></div>
+  <div class="row" style="margin-top:8px;">
+    <button class="btn sec" id="btn-resign">Pes Et</button>
+    <button class="btn sec" id="btn-new-game">Yeni Oyun</button>
+  </div>
+  <div class="movelist" id="move-list"></div>
+</div>
+
+<!-- ANTIQUES SHOP -->
+<div class="screen" id="sc-shop">
+  <div class="topbar">
+    <div class="icon-btn" id="shop-back">←</div>
+    <h1>🏺 Antikalarım</h1>
+    <div class="coins-display" id="shop-coins">🪙 0</div>
+  </div>
+  <div class="card">
+    <p class="muted">Taş görünümü, tahta rengi gibi özel içerikler satın al. Kazandığın parayla alabilirsin.</p>
+  </div>
+  <div class="shop-grid" id="shop-grid"></div>
+</div>
+
+<!-- PROFILE -->
+<div class="screen" id="sc-profile">
+  <div class="topbar">
+    <div class="icon-btn" id="profile-back">←</div>
+    <h1>Profil</h1>
+    <div style="width:42px;"></div>
+  </div>
+  <div class="card" style="text-align:center;">
+    <div class="av" id="prof-av-big" style="width:86px;height:86px;font-size:3rem;margin:0 auto 10px;"></div>
+    <button class="btn sec" style="width:auto;margin:0 auto 10px;" id="prof-gallery-btn">🖼️ Galeriden Seç</button>
+    <input type="file" id="prof-gallery-file" accept="image/*" style="display:none;">
+    <input type="text" id="prof-name-input" maxlength="18">
+    <div class="err" id="prof-err"></div>
+    <div class="avatar-grid" id="prof-av-grid"></div>
+    <button class="btn grn" id="prof-save">Kaydet</button>
+  </div>
+  <div class="card">
+    <h3>İstatistikler</h3>
+    <div id="prof-stats"></div>
+  </div>
+  <div class="card">
+    <h3>Arkadaş ID'n</h3>
+    <div class="ibb" style="margin-bottom:6px;">
+      <div class="pill lg" id="prof-friend-id">------</div>
+      <button class="btn sec" style="margin:0;" id="prof-copy-id">Kopyala</button>
+    </div>
+    <button class="btn sec" id="prof-regen-id">🔄 Yeni ID</button>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="screen" id="sc-settings">
+  <div class="topbar">
+    <div class="icon-btn" id="settings-back">←</div>
+    <h1>Ayarlar</h1>
+    <div style="width:42px;"></div>
+  </div>
+  <div class="card">
+    <h3>Dil</h3>
+    <button class="btn sec" id="btn-lang">🌐 <span id="cur-lang">Türkçe</span></button>
+  </div>
+  <div class="card">
+    <h3>Hakkında</h3>
+    <p class="muted">Satranç v1.5 — PeerJS WebRTC ile gerçek çevrimiçi oyun. Cihaza yerel kayıt.</p>
+    <p class="muted" style="margin-top:6px;">Seviye: Her 20 kazanmada 0.5 seviye (40 kazanma = 1 tam seviye). Her 10 seviyede ödül 🪙.</p>
+  </div>
+</div>
+
+<!-- FRIENDS LIST -->
+<div class="screen" id="sc-friends">
+  <div class="topbar">
+    <div class="icon-btn" id="friends-back">←</div>
+    <h1>Mesajlar</h1>
+    <div class="icon-btn" id="friends-add-btn">➕</div>
+  </div>
+  <div class="card">
+    <div class="muted">Kendi ID'n</div>
+    <div class="ibb" style="margin-top:4px;">
+      <div class="pill lg" id="friends-own-id">------</div>
+      <button class="btn sec" style="margin:0;" id="friends-copy-btn">Kopyala</button>
+    </div>
+  </div>
+  <input type="text" id="friend-search" placeholder="🔍 İsimle ara...">
+  <div id="friends-list"></div>
+  <p class="muted" id="no-friends-hint" style="text-align:center;margin-top:20px;display:none;">Henüz arkadaşın yok. ➕ ile ekle.</p>
+</div>
+
+<!-- CHAT -->
+<div class="screen" id="sc-chat">
+  <div class="topbar">
+    <div class="icon-btn" id="chat-back">←</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="av" id="chat-friend-av" style="width:34px;height:34px;font-size:1.2rem;"></div>
+      <div style="font-weight:700;" id="chat-friend-name">—</div>
+    </div>
+    <div style="width:42px;"></div>
+  </div>
+  <div class="chat-box" id="chat-box"></div>
+  <div class="chat-row">
+    <div class="icon-btn" id="chat-img-btn">📷</div>
+    <input type="text" id="chat-input" placeholder="Mesaj yaz...">
+    <div class="icon-btn" id="chat-send-btn">➤</div>
+  </div>
+  <input type="file" id="chat-img-file" accept="image/*" style="display:none;">
+</div>
+
+<!-- TABBAR (6 sekme) -->
+<div class="tabbar" id="tabbar">
+  <div class="tab-btn active" data-tab="menu"><span class="ti">🏠</span>Menü</div>
+  <div class="tab-btn" data-tab="shop"><span class="ti">🏺</span>Antika</div>
+  <div class="tab-btn" data-tab="profile"><span class="ti">👤</span>Profil</div>
+  <div class="tab-btn" data-tab="friends"><span class="ti">💬</span>Sohbet</div>
+  <div class="tab-btn" data-tab="settings"><span class="ti">⚙️</span>Ayarlar</div>
+</div>
+</div><!-- /app -->
+
+<!-- OVERLAYS -->
+<div class="modal-overlay" id="ov-mic">
+  <div class="modal">
+    <h2>🎤 Mikrofon</h2>
+    <p class="muted">Mikrofonu açmak için şifre: <strong>7aK19Fvs</strong></p>
+    <input type="password" id="mic-pw-input" placeholder="••••••••">
+    <div class="err" id="mic-err">Üzgünüz, mikrofon açılamadı.</div>
+    <div class="row">
+      <button class="btn sec" id="mic-cancel">Kapat</button>
+      <button class="btn grn" id="mic-confirm">Onayla</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="ov-lang">
+  <div class="modal">
+    <h2>🌐 Dil Seç</h2>
+    <input type="text" id="lang-search" placeholder="Dil ara...">
+    <div class="lang-list" id="lang-list"></div>
+    <button class="btn sec" id="lang-close" style="margin-top:8px;">Kapat</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="ov-promo">
+  <div class="modal center">
+    <h3>Terfi taşı seç</h3>
+    <div class="promo-choices" id="promo-choices"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="ov-gameover">
+  <div class="modal center">
+    <h2 id="go-title">—</h2>
+    <p class="muted" id="go-sub"></p>
+    <div id="go-reward" style="margin:10px 0;"></div>
+    <button class="btn grn" id="go-chat-btn">💬 Sohbete Git</button>
+    <button class="btn sec" id="go-menu-btn">Ana Menüye Dön</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="ov-waiting">
+  <div class="modal center">
+    <h2>🚪 Oda Açık</h2>
+    <p class="muted">Bu kodu rakibine gönder:</p>
+    <div class="pill lg" id="wait-room-id" style="margin:10px 0;display:inline-block;letter-spacing:3px;">------</div>
+    <div style="margin-bottom:12px;">
+      <button class="btn sec" style="width:auto;display:inline-block;" id="wait-copy-btn">📋 Kopyala</button>
+    </div>
+    <div id="wait-status" class="muted">⏳ Rakip bekleniyor...</div>
+    <div style="height:10px;"></div>
+    <button class="btn red" id="wait-cancel-btn">İptal</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="ov-add-friend">
+  <div class="modal">
+    <h2>➕ Arkadaş Ekle</h2>
+    <p class="muted">Arkadaşının adını veya ID'sini gir</p>
+    <input type="text" id="af-name-input" maxlength="20" placeholder="Ad veya ID">
+    <div class="err" id="af-err"></div>
+    <div class="avatar-grid" id="af-av-grid"></div>
+    <div class="row">
+      <button class="btn sec" id="af-cancel">Kapat</button>
+      <button class="btn grn" id="af-confirm">Ekle</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="ov-level-up">
+  <div class="modal center">
+    <div style="font-size:3rem;">🎉</div>
+    <h2 id="lu-title">Seviye Atladın!</h2>
+    <p class="muted" id="lu-sub"></p>
+    <button class="btn grn" id="lu-close">Harika!</button>
+  </div>
+</div>
+
+<audio id="remote-audio" autoplay playsinline style="display:none;"></audio>
+<div id="toast-wrap"></div>
+
+<script>
+/* ========== CHESS ENGINE ========== */
+/* ===== SVG PIECE PATHS (Merida-style, real chess look) ===== */
+const PIECE_SVG = {
+  wK: `<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><g fill="#fff" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22.5 11.63V6M20 8h5"/><path d="M22.5 25s4.5-7.5 3-10.5c0 0-1-2.5-3-2.5s-3 2.5-3 2.5c-1.5 3 3 10.5 3 10.5" stroke-linejoin="round"/><path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-7s9-4.5 6-10.5c-4-6.5-13.5-3.5-16 4V27v-3.5c-3.5-7.5-13-10.5-16-4-3 6 5 10 5 10V37z"/><path d="M11.5 30c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0" fill="none"/></g></svg>`,
+  bK: `<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><g fill="#1a1a1a" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22.5 11.63V6M20 8h5" stroke="#fff"/><path d="M22.5 25s4.5-7.5 3-10.5c0 0-1-2.5-3-2.5s-3 2.5-3 2.5c-1.5 3 3 10.5 3 10.5" stroke-linejoin="round"/><path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-7s9-4.5 6-10.5c-4-6.5-13.5-3.5-16 4V27v-3.5c-3.5-7.5-13-10.5-16-4-3 6 5 10 5 10V37z"/><path d="M11.5 30c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0" fill="none" stroke="#fff"/></g></svg>`,
+  wQ: `<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><g fill="#fff" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.75"/><circle cx="14" cy="9" r="2.75"/><circle cx="22.5" cy="8" r="2.75"/><circle cx="31" cy="9" r="2.75"/><circle cx="39" cy="12" r="2.75"/><path d="M9 26c8.5-8.5 15.5-8.5 27 0l2.5-12.5L31 25l-.3-14.1-8.2 13.4-8.2-13.5L14 25 6.5 13.5 9 26z" stroke-linejoin="round"/><path d="M9 26c0 2 1.5 2 2.5 4 1 1.5 1 1 .5 3.5-1.5 1-1.5 2.5-1.5 2.5-1.5 1.5.5 2.5.5 2.5 6.5 3 16.5 3 23 0 0 0 1.5-1 0-2.5 0 0 .5-1.5-1-2.5-.5-2.5-.5-2 .5-3.5 1-2 2.5-2 2.5-4-8.5-1.5-18.5-1.5-27 0z"/><path d="M11 38.5a35 35 1 0 0 23 0" fill="none"/><path d="M11 29a35 35 1 0 1 23 0" fill="none"/></g></svg>`,
+  bQ: `<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><g fill="#1a1a1a" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.75"/><circle cx="14" cy="9" r="2.75"/><circle cx="22.5" cy="8" r="2.75"/><circle cx="31" cy="9" r="2.75"/><circle cx="39" cy="12" r="2.75"/><path d="M9 26c8.5-8.5 15.5-8.5 27 0l2.5-12.5L31 25l-.3-14.1-8.2 13.4-8.2-13.5L14 25 6.5 13.5 9 26z" stroke-linejoin="round"/><path d="M9 26c0 2 1.5 2 2.5 4 1 1.5 1 1 .5 3.5-1.5 1-1.5 2.5-1.5 2.5-1.5 1.5.5 2.5.5 2.5 6.5 3 16.5 3 23 0 0 0 1.5-1 0-2.5 0 0 .5-1.5-1-2.5-.5-2.5-.5-2 .5-3.5 1-2 2.5-2 2.5-4-8.5-1.5-18.5-1.5-27 0z"/><path d="M11 38.5a35 35 1 0 0 23 0" fill="none" stroke="#fff"/><path d="M11 29a35 35 1 0 1 23 0" fill="none" stroke="#fff"/></g></svg>`,
+  wR: `<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><g fill="#fff" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 39h27v-3H9v3zm3-3v-4h21v4H12zm-1-22V9h4v2h5V9h5v2h5V9h4v5"/><path d="M34 14l-3 3H14l-3-3"/><path d="M31 17v12.5H14V17"/><path d="M31 29.5l1.5 2.5h-20l1.5-2.5"/><path d="M11 14h23" fill="none"/></g></svg>`,
+  bR: `<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><g fill="#1a1a1a" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 39h27v-3H9v3zm3-3v-4h21v4H12zm-1-22V9h4v2h5V9h5v2h5V9h4v5"/><path d="M34 14l-3 3H14l-3-3"/><path d="M31 17v12.5H14V17"/><path d="M31 29.5l1.5 2.5h-20l1.5-2.5"/><path d="M11 14h23" fill="none" stroke="#fff"/></g></svg>`,
+  wB: `<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><g fill="#fff" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><g fill="none"><path d="M9 36c3.39-.97 10.11.43 13.5-2 3.39 2.43 10.11 1.03 13.5 2"/><path d="M15 32c2.5 2.5 12.5 2.5 15 0 .5-1.5 0-2 0-2 0-2.5-2.5-4-2.5-4 5.5-1.5 6-11.5-5-15.5-11 4-10.5 14-5 15.5 0 0-2.5 1.5-2.5 4 0 0-.5.5 0 2z"/><path d="M25 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/></g><path d="M17.5 26h10M15 30h15" fill="none"/></g></svg>`,
+  bB: `<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><g fill="#1a1a1a" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><g fill="none"><path d="M9 36c3.39-.97 10.11.43 13.5-2 3.39 2.43 10.11 1.03 13.5 2"/><path d="M15 32c2.5 2.5 12.5 2.5 15 0 .5-1.5 0-2 0-2 0-2.5-2.5-4-2.5-4 5.5-1.5 6-11.5-5-15.5-11 4-10.5 14-5 15.5 0 0-2.5 1.5-2.5 4 0 0-.5.5 0 2z"/><path d="M25 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/></g><path d="M17.5 26h10M15 30h15" fill="none" stroke="#fff"/></g></svg>`,
+  wN: `<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><g fill="#fff" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10c10.5 1 16.5 8 16 29H15c0-9 10-6.5 8-21"/><path d="M24 18c.38 5.12-2.6 9.1-8 10-4.7.9-8.8-1.9-8.8-5.4-.7-3.9 2.4-7.4 6.2-6.6 1.1.27 2.6 1.3 3.2 2.5.5-2.4-.7-5.6-3.8-7.2 1-1.5 3.2-.7 4.5.6-.2-1.7-.6-3.6.7-4.8.3.7.7 1.2 1.2 1.5.4-.5.7-1 1-1.4 0-.1.1-.2.2-.3.7.8 1.5 1.6 1.5 2.5 0 .5-.3 1.1-.5 1.5"/><circle cx="15" cy="15.5" r="1.5"/><path d="M24.55 10.4l-.45 1.25.5.15c3.15 1 5.65 2.49 6.9 4.45l.15.25-.2.2c-2 2.2-5 3.5-7.9 3.5-3.3 0-6.3-1.6-8.5-3.9" fill="none"/></g></svg>`,
+  bN: `<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><g fill="#1a1a1a" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10c10.5 1 16.5 8 16 29H15c0-9 10-6.5 8-21"/><path d="M24 18c.38 5.12-2.6 9.1-8 10-4.7.9-8.8-1.9-8.8-5.4-.7-3.9 2.4-7.4 6.2-6.6 1.1.27 2.6 1.3 3.2 2.5.5-2.4-.7-5.6-3.8-7.2 1-1.5 3.2-.7 4.5.6-.2-1.7-.6-3.6.7-4.8.3.7.7 1.2 1.2 1.5.4-.5.7-1 1-1.4 0-.1.1-.2.2-.3.7.8 1.5 1.6 1.5 2.5 0 .5-.3 1.1-.5 1.5"/><circle cx="15" cy="15.5" r="1.5" fill="#fff"/><path d="M24.55 10.4l-.45 1.25.5.15c3.15 1 5.65 2.49 6.9 4.45l.15.25-.2.2c-2 2.2-5 3.5-7.9 3.5-3.3 0-6.3-1.6-8.5-3.9" fill="none"/></g></svg>`,
+  wP: `<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03L15 39h15l-3.41-12.97C28.06 24.84 29 23.03 29 21c0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" fill="#fff" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+  bP: `<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"><path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03L15 39h15l-3.41-12.97C28.06 24.84 29 23.03 29 21c0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" fill="#1a1a1a" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+};
+const FILES='abcdefgh';
+const VAL={P:100,N:320,B:330,R:500,Q:900,K:20000};
+const BDIR=[[-1,-1],[-1,1],[1,-1],[1,1]],RDIR=[[-1,0],[1,0],[0,-1],[0,1]],KDIR=[...BDIR,...RDIR];
+const NDIR=[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+const PST_P=[[0,0,0,0,0,0,0,0],[50,50,50,50,50,50,50,50],[10,10,20,30,30,20,10,10],[5,5,10,25,25,10,5,5],[0,0,0,20,20,0,0,0],[5,-5,-10,0,0,-10,-5,5],[5,10,10,-20,-20,10,10,5],[0,0,0,0,0,0,0,0]];
+const opp=c=>c==='w'?'b':'w',col=p=>p?p[0]:null,typ=p=>p?p[1]:null,inb=(r,c)=>r>=0&&r<8&&c>=0&&c<8,cloneB=b=>b.map(r=>r.slice());
+function initBoard(){const b=Array.from({length:8},()=>Array(8).fill(null)),bk=['R','N','B','Q','K','B','N','R'];for(let c=0;c<8;c++){b[0][c]='b'+bk[c];b[1][c]='bP';b[6][c]='wP';b[7][c]='w'+bk[c];}return b;}
+function newGS(){return{board:initBoard(),turn:'w',castling:{w:{k:true,q:true},b:{k:true,q:true}},ep:null,history:[],lastMove:null};}
+function isAtk(board,r,c,byC){
+  const pd=byC==='w'?r+1:r-1;
+  for(const dc of[-1,1]){const pc=c+dc;if(inb(pd,pc)&&board[pd][pc]===byC+'P')return true;}
+  for(const[dr,dc]of NDIR){const nr=r+dr,nc=c+dc;if(inb(nr,nc)&&board[nr][nc]===byC+'N')return true;}
+  for(const[dr,dc]of KDIR){const nr=r+dr,nc=c+dc;if(inb(nr,nc)&&board[nr][nc]===byC+'K')return true;}
+  for(const dirs of[BDIR,RDIR])for(const[dr,dc]of dirs){let nr=r+dr,nc=c+dc;while(inb(nr,nc)){const p=board[nr][nc];if(p){const ok=(dirs===BDIR&&(typ(p)==='B'||typ(p)==='Q'))||(dirs===RDIR&&(typ(p)==='R'||typ(p)==='Q'));if(col(p)===byC&&ok)return true;break;}nr+=dr;nc+=dc;}}
+  return false;
+}
+function findKing(board,color){for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(board[r][c]===color+'K')return[r,c];return null;}
+function pseudoMoves(gs){
+  const{board,turn}=gs,moves=[];
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const p=board[r][c];if(!p||col(p)!==turn)continue;const t=typ(p);
+    if(t==='P'){const dir=turn==='w'?-1:1,sr=turn==='w'?6:1,pr=turn==='w'?0:7;if(inb(r+dir,c)&&!board[r+dir][c]){pushP(moves,p,r,c,r+dir,c,pr,null);if(r===sr&&!board[r+2*dir][c])moves.push({from:[r,c],to:[r+2*dir,c],piece:p,ds:true});}for(const dc of[-1,1]){const nr=r+dir,nc=c+dc;if(!inb(nr,nc))continue;const tgt=board[nr][nc];if(tgt&&col(tgt)!==turn)pushP(moves,p,r,c,nr,nc,pr,tgt);else if(!tgt&&gs.ep&&gs.ep[0]===nr&&gs.ep[1]===nc)moves.push({from:[r,c],to:[nr,nc],piece:p,epCap:true,capture:(turn==='w'?'bP':'wP')});}}
+    else if(t==='N'){for(const[dr,dc]of NDIR){const nr=r+dr,nc=c+dc;if(!inb(nr,nc))continue;const tgt=board[nr][nc];if(!tgt||col(tgt)!==turn)moves.push({from:[r,c],to:[nr,nc],piece:p,capture:tgt});}}
+    else if(t==='B'||t==='R'||t==='Q'){const dirs=t==='B'?BDIR:t==='R'?RDIR:KDIR;for(const[dr,dc]of dirs){let nr=r+dr,nc=c+dc;while(inb(nr,nc)){const tgt=board[nr][nc];if(!tgt){moves.push({from:[r,c],to:[nr,nc],piece:p});}else{if(col(tgt)!==turn)moves.push({from:[r,c],to:[nr,nc],piece:p,capture:tgt});break;}nr+=dr;nc+=dc;}}}
+    else if(t==='K'){for(const[dr,dc]of KDIR){const nr=r+dr,nc=c+dc;if(!inb(nr,nc))continue;const tgt=board[nr][nc];if(!tgt||col(tgt)!==turn)moves.push({from:[r,c],to:[nr,nc],piece:p,capture:tgt});}const row=turn==='w'?7:0,rts=gs.castling[turn];if(r===row&&c===4){if(rts.k&&!board[row][5]&&!board[row][6]&&board[row][7]===turn+'R'&&!isAtk(board,row,4,opp(turn))&&!isAtk(board,row,5,opp(turn))&&!isAtk(board,row,6,opp(turn)))moves.push({from:[r,c],to:[row,6],piece:p,castle:'k'});if(rts.q&&!board[row][1]&&!board[row][2]&&!board[row][3]&&board[row][0]===turn+'R'&&!isAtk(board,row,4,opp(turn))&&!isAtk(board,row,3,opp(turn))&&!isAtk(board,row,2,opp(turn)))moves.push({from:[r,c],to:[row,2],piece:p,castle:'q'});}}
+  }
+  return moves;
+}
+function pushP(moves,piece,r,c,nr,nc,pr,cap){if(nr===pr)for(const q of['Q','R','B','N'])moves.push({from:[r,c],to:[nr,nc],piece,capture:cap,promo:q});else moves.push({from:[r,c],to:[nr,nc],piece,capture:cap});}
+function applyMove(gs,move){
+  const board=cloneB(gs.board),color=col(move.piece),[fr,fc]=move.from,[tr2,tc]=move.to;
+  const castling={w:{...gs.castling.w},b:{...gs.castling.b}};let ep=null;
+  board[fr][fc]=null;
+  if(move.epCap){board[tr2][tc]=move.piece;board[fr][tc]=null;}
+  else if(move.promo){board[tr2][tc]=color+move.promo;}
+  else{board[tr2][tc]=move.piece;}
+  if(move.castle){const row=color==='w'?7:0;if(move.castle==='k'){board[row][5]=board[row][7];board[row][7]=null;}else{board[row][3]=board[row][0];board[row][0]=null;}}
+  if(typ(move.piece)==='K'){castling[color].k=false;castling[color].q=false;}
+  if(typ(move.piece)==='R'){const row=color==='w'?7:0;if(fr===row&&fc===0)castling[color].q=false;if(fr===row&&fc===7)castling[color].k=false;}
+  if(move.capture){if(tr2===0&&tc===0)castling.b.q=false;if(tr2===0&&tc===7)castling.b.k=false;if(tr2===7&&tc===0)castling.w.q=false;if(tr2===7&&tc===7)castling.w.k=false;}
+  if(move.ds)ep=[(fr+tr2)/2,fc];
+  return{board,turn:opp(gs.turn),castling,ep,history:[...gs.history,move],lastMove:move};
+}
+function legalMoves(gs){return pseudoMoves(gs).filter(m=>{const next=applyMove(gs,m),kp=findKing(next.board,gs.turn);return kp&&!isAtk(next.board,kp[0],kp[1],next.turn);});}
+function inCheck(gs){const kp=findKing(gs.board,gs.turn);return kp&&isAtk(gs.board,kp[0],kp[1],opp(gs.turn));}
+function gameStatus(gs){const mvs=legalMoves(gs);if(!mvs.length)return inCheck(gs)?'mate':'stalemate';return inCheck(gs)?'check':'ok';}
+function evaluate(gs){let s=0;for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=gs.board[r][c];if(!p)continue;const v=VAL[typ(p)];let b=typ(p)==='P'?(col(p)==='w'?PST_P[r][c]:PST_P[7-r][c]):(7-(Math.abs(3.5-r)+Math.abs(3.5-c)))*2;s+=(col(p)==='w'?1:-1)*(v+b);}return s;}
+function negamax(gs,depth,alpha,beta,sign){const mvs=legalMoves(gs);if(!depth||!mvs.length){if(!mvs.length)return inCheck(gs)?sign*(-100000-depth):0;return sign*evaluate(gs);}const ordered=mvs.slice().sort((a,b)=>(b.capture?VAL[typ(b.capture)]:0)-(a.capture?VAL[typ(a.capture)]:0));let best=-Infinity;for(const m of ordered){const v=-negamax(applyMove(gs,m),depth-1,-beta,-alpha,-sign);if(v>best)best=v;if(best>alpha)alpha=best;if(alpha>=beta)break;}return best;}
+function aiMove(gs,diff){const mvs=legalMoves(gs);if(!mvs.length)return null;if(diff==='easy'&&Math.random()<0.4)return mvs[Math.floor(Math.random()*mvs.length)];const depth=diff==='easy'?1:diff==='medium'?2:3,sign=gs.turn==='w'?1:-1;let best=-Infinity,bests=[];for(const m of mvs.slice().sort((a,b)=>(b.capture?VAL[typ(b.capture)]:0)-(a.capture?VAL[typ(a.capture)]:0))){const v=-negamax(applyMove(gs,m),depth-1,-Infinity,Infinity,-sign);if(v>best){best=v;bests=[m];}else if(v===best)bests.push(m);}return bests[Math.floor(Math.random()*bests.length)];}
+
+/* ========== PROFANITY FILTER ========== */
+const CURSES=['amk','oç','piç','yavşak','siktir','sikeyim','göt','ibne','şerefsiz','orospu','pezevenk','gerizekalı','yarrak','kaltak','sürtük'];
+function filt(t){let o=t;for(const w of CURSES){const re=new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');o=o.replace(re,m=>'*'.repeat(m.length));}return o;}
+
+/* ========== SHOP DATA ========== */
+const SHOP_ITEMS=[
+  {id:'board_green',name:'Yeşil Tahta',icon:'🟩',price:50,type:'board',color1:'#4a7c59',color2:'#f0d9b5'},
+  {id:'board_blue',name:'Mavi Tahta',icon:'🟦',price:50,type:'board',color1:'#4466aa',color2:'#ddeeff'},
+  {id:'board_red',name:'Kırmızı Tahta',icon:'🟥',price:50,type:'board',color1:'#aa3333',color2:'#ffd5d5'},
+  {id:'board_purple',name:'Mor Tahta',icon:'🟪',price:75,type:'board',color1:'#6a3d9a',color2:'#e8d5f0'},
+  {id:'piece_gold',name:'Altın Taşlar',icon:'🥇',price:100,type:'piece',style:'gold'},
+  {id:'piece_neon',name:'Neon Taşlar',icon:'💚',price:120,type:'piece',style:'neon'},
+  {id:'frame_fire',name:'Ateş Çerçevesi',icon:'🔥',price:80,type:'frame',style:'fire'},
+  {id:'frame_ice',name:'Buz Çerçevesi',icon:'❄️',price:80,type:'frame',style:'ice'},
+];
+
+/* ========== STATE ========== */
+const MIC_PW='7aK19Fvs';
+const AVATARS=['😀','😎','🦁','🐯','🐼','🐸','🐵','🦄','🐲','🤖','👑','♟️','🧠','🥷','🧙','🐺','🦅','🐧','🐙','🦊'];
+const LANGS_LIST=[
+  {code:'tr',name:'Türkçe 🇹🇷'},{code:'en',name:'English'},{code:'de',name:'Deutsch'},
+  {code:'fr',name:'Français'},{code:'es',name:'Español'},{code:'it',name:'Italiano'},
+  {code:'pt',name:'Português'},{code:'ru',name:'Русский'},{code:'ar',name:'العربية'},
+  {code:'zh',name:'中文'},{code:'ja',name:'日本語'},{code:'ko',name:'한국어'},
+  {code:'nl',name:'Nederlands'},{code:'pl',name:'Polski'},{code:'uk',name:'Українська'},
+  {code:'fa',name:'فارسی'},{code:'hi',name:'हिन्दी'},{code:'sv',name:'Svenska'},
+  {code:'el',name:'Ελληνικά'},{code:'az',name:'Azərbaycan'},{code:'ro',name:'Română'},
+  {code:'cs',name:'Čeština'},{code:'hu',name:'Magyar'},{code:'vi',name:'Tiếng Việt'},
+  {code:'id',name:'Bahasa Indonesia'},{code:'ms',name:'Bahasa Melayu'},
+  {code:'th',name:'ภาษาไทย'},{code:'he',name:'עברית'},{code:'bn',name:'বাংলা'},
+  {code:'da',name:'Dansk'},{code:'fi',name:'Suomi'},{code:'no',name:'Norsk'},
+];
+
+let S={
+  profile:null,lang:'tr',friends:[],chats:{},currentFriendId:null,
+  diff:'medium',mode:null,gs:null,selSq:null,legal:[],
+  micUnlocked:false,micStream:null,peer:null,conn:null,voiceCall:null,_pendingCall:null,
+  onlineColor:null,onlineOppName:null,
+  stats:{wins:0,losses:0,draws:0},
+  xp:0,level:1,coins:0,
+  owned:[],equipped:{}
+};
+
+/* ========== STORAGE ========== */
+function load(){
+  try{
+    const p=localStorage.getItem('ch_profile');if(p)S.profile=JSON.parse(p);
+    const l=localStorage.getItem('ch_lang');if(l)S.lang=l;
+    const f=localStorage.getItem('ch_friends');if(f)S.friends=JSON.parse(f);
+    const ch=localStorage.getItem('ch_chats');if(ch)S.chats=JSON.parse(ch);
+    const st=localStorage.getItem('ch_stats');if(st)S.stats=JSON.parse(st);
+    const xp=localStorage.getItem('ch_xp');if(xp)S.xp=parseFloat(xp);
+    const lv=localStorage.getItem('ch_level');if(lv)S.level=parseFloat(lv);
+    const co=localStorage.getItem('ch_coins');if(co)S.coins=parseInt(co);
+    const ow=localStorage.getItem('ch_owned');if(ow)S.owned=JSON.parse(ow);
+    const eq=localStorage.getItem('ch_equipped');if(eq)S.equipped=JSON.parse(eq);
+  }catch(e){}
+  if(S.profile&&!S.profile.fid){S.profile.fid=genId(6);saveProfile();}
+}
+function saveProfile(){localStorage.setItem('ch_profile',JSON.stringify(S.profile));}
+function saveFriends(){localStorage.setItem('ch_friends',JSON.stringify(S.friends));}
+function saveChats(){localStorage.setItem('ch_chats',JSON.stringify(S.chats));}
+function saveStats(){localStorage.setItem('ch_stats',JSON.stringify(S.stats));localStorage.setItem('ch_xp',S.xp);localStorage.setItem('ch_level',S.level);localStorage.setItem('ch_coins',S.coins);}
+function saveShop(){localStorage.setItem('ch_owned',JSON.stringify(S.owned));localStorage.setItem('ch_equipped',JSON.stringify(S.equipped));}
+
+/* ========== LEVEL SYSTEM ========== */
+// 20 wins = 0.5 level, 40 wins = 1 level
+function addWin(){
+  S.stats.wins++;
+  const oldLevel=Math.floor(S.level);
+  S.xp=S.stats.wins*0.5; // 0.5 per win
+  S.level=1+Math.floor(S.xp/20); // every 20 xp = 1 level (20 xp = 40 wins)
+  S.coins+=10; // 10 coins per win
+  // Milestone bonus every 10 levels
+  const newLevel=Math.floor(S.level);
+  if(newLevel>oldLevel){
+    const bonusCoins=(newLevel%10===0)?200:50;
+    S.coins+=bonusCoins;
+    saveStats();
+    showLevelUp(newLevel,bonusCoins,newLevel%10===0);
+  } else {
+    saveStats();
+  }
+  updateMenuStats();
+}
+function xpForNextLevel(){return 20;}
+function xpInCurrentLevel(){return S.xp % 20;}
+function levelProgress(){return (xpInCurrentLevel()/xpForNextLevel())*100;}
+
+function showLevelUp(newLv,bonusCoins,isMilestone){
+  document.getElementById('lu-title').textContent=(isMilestone?'🏆 ':'🎉 ')+'Seviye '+newLv+'!';
+  document.getElementById('lu-sub').textContent=
+    (isMilestone?'10. seviye bonusu! ':'')+'+'  +bonusCoins+'🪙 kazandın!';
+  document.getElementById('ov-level-up').classList.add('active');
+}
+document.getElementById('lu-close').onclick=()=>document.getElementById('ov-level-up').classList.remove('active');
+
+function updateMenuStats(){
+  const lv=Math.floor(S.level);
+  document.getElementById('menu-level').textContent='⭐ Sev. '+lv;
+  document.getElementById('menu-coins').textContent='🪙 '+S.coins;
+  const pct=levelProgress();
+  document.getElementById('menu-level-bar').style.width=pct+'%';
+  const winsToNext=Math.ceil((20-xpInCurrentLevel())*2); // wins needed (each win = 0.5 xp)
+  document.getElementById('menu-xp-text').textContent=
+    S.stats.wins+' kazanma · Sonraki sev. için '+winsToNext+' kazanma';
+}
+
+/* ========== SHOP ========== */
+function openShop(){
+  showScreen('sc-shop');setTab('shop');
+  document.getElementById('shop-coins').textContent='🪙 '+S.coins;
+  renderShop();
+}
+function renderShop(){
+  const grid=document.getElementById('shop-grid');grid.innerHTML='';
+  SHOP_ITEMS.forEach(item=>{
+    const owned=S.owned.includes(item.id);
+    const equipped=S.equipped[item.type]===item.id;
+    const div=document.createElement('div');
+    div.className='shop-item'+(owned?' owned':'')+(equipped?' equipped':'');
+    div.innerHTML=`<div class="si-icon">${item.icon}</div>
+      <div class="si-name">${item.name}</div>
+      <div class="si-price">${owned?(equipped?'✅ Takılı':'✔ Sahipsin'):'🪙 '+item.price}</div>
+      <div class="si-badge">${item.type==='board'?'Tahta':item.type==='piece'?'Taş':'Çerçeve'}</div>`;
+    div.onclick=()=>{
+      if(!owned){
+        if(S.coins<item.price){toast('Yeterli para yok! 🪙 '+S.coins+' / '+item.price);return;}
+        S.coins-=item.price;S.owned.push(item.id);saveStats();saveShop();toast(item.name+' satın alındı!');
+      } else {
+        S.equipped[item.type]=equipped?null:item.id;saveShop();
+        if(!equipped)toast(item.name+' takıldı!');else toast('Çıkarıldı.');
+      }
+      document.getElementById('shop-coins').textContent='🪙 '+S.coins;
+      document.getElementById('menu-coins').textContent='🪙 '+S.coins;
+      renderShop();applyEquipped();
+    };
+    grid.appendChild(div);
+  });
+}
+function applyEquipped(){
+  const boardItem=S.equipped.board?SHOP_ITEMS.find(i=>i.id===S.equipped.board):null;
+  if(boardItem){
+    document.documentElement.style.setProperty('--light-sq',boardItem.color2);
+    document.documentElement.style.setProperty('--dark-sq',boardItem.color1);
+  } else {
+    document.documentElement.style.setProperty('--light-sq','#eddfc4');
+    document.documentElement.style.setProperty('--dark-sq','#7d5a3c');
+  }
+}
+
+/* ========== HELPERS ========== */
+function genId(n){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let o='';for(let i=0;i<n;i++)o+=c[Math.floor(Math.random()*c.length)];return o;}
+function usedNames(){try{return JSON.parse(localStorage.getItem('ch_names')||'[]');}catch(e){return[];}}
+function regName(n){const a=usedNames();if(!a.includes(n.toLowerCase())){a.push(n.toLowerCase());localStorage.setItem('ch_names',JSON.stringify(a));}}
+function validName(n){return/^[A-Za-z0-9ÇçĞğİıÖöŞşÜü_.\-]{3,18}$/.test(n);}
+function setAv(el,val){el.innerHTML='';if(val&&val.startsWith('data:image')){const img=document.createElement('img');img.src=val;el.appendChild(img);}else el.textContent=val||'😀';}
+function renderAvGrid(gridId,selected,cb){const g=document.getElementById(gridId);g.innerHTML='';AVATARS.forEach(av=>{const d=document.createElement('div');d.className='av-opt'+(av===selected?' sel':'');d.textContent=av;d.onclick=()=>{g.querySelectorAll('.av-opt').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');cb(av);};g.appendChild(d);});}
+function toast(msg){const el=document.createElement('div');el.className='toast';el.textContent=msg;document.getElementById('toast-wrap').appendChild(el);setTimeout(()=>el.remove(),2400);}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.getElementById('tabbar').style.display=id==='sc-onboard'?'none':'flex';}
+function setTab(t){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));}
+function updateMicBtns(){const on=S.micUnlocked;[document.getElementById('mic-btn'),document.getElementById('game-mic-btn')].forEach(b=>{if(b)b.classList.toggle('on',on);});}
+
+/* ========== NAVIGATION ========== */
+function goMenu(){
+  if(!S.profile)return;
+  setAv(document.getElementById('menu-av'),S.profile.avatar);
+  document.getElementById('menu-name').textContent=S.profile.username;
+  updateMenuStats();
+  showScreen('sc-menu');setTab('menu');
+}
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.onclick=()=>{
+  const t=btn.dataset.tab;setTab(t);
+  if(t==='menu')goMenu();
+  else if(t==='shop')openShop();
+  else if(t==='profile')openProfile();
+  else if(t==='settings')showScreen('sc-settings');
+  else if(t==='friends')openFriends();
+});
+document.getElementById('settings-back').onclick=goMenu;
+document.getElementById('profile-back').onclick=goMenu;
+document.getElementById('friends-back').onclick=goMenu;
+document.getElementById('chat-back').onclick=()=>{openFriends();setTab('friends');};
+document.getElementById('diff-back').onclick=goMenu;
+document.getElementById('shop-back').onclick=goMenu;
+document.getElementById('game-back').onclick=()=>{
+  if(S.mode==='online-real'&&S.conn){S.conn.close();S.conn=null;}
+  hangupVoice();goMenu();
+};
+
+/* ========== PEER / VOICE ========== */
+function ensureRemoteAudio(){return document.getElementById('remote-audio');}
+
+function initPeer(){
+  if(typeof Peer==='undefined'){peerStatus('err','PeerJS yüklenemedi');return;}
+  if(S.peer&&!S.peer.destroyed)return;
+  const pid='chess-'+S.profile.fid+'-'+Math.random().toString(36).slice(2,6);
+  S.peer=new Peer(pid,{debug:0});
+  peerStatus('waiting','Bağlanıyor...');
+  S.peer.on('open',()=>{
+    peerStatus('online','Çevrimiçi ✓');
+    document.getElementById('btn-create-room').disabled=false;
+    document.getElementById('btn-join-room').disabled=false;
+  });
+  S.peer.on('disconnected',()=>{
+    peerStatus('err','Bağlantı kesildi');
+    document.getElementById('btn-create-room').disabled=true;
+    document.getElementById('btn-join-room').disabled=true;
+    setTimeout(()=>{if(S.peer&&!S.peer.destroyed)S.peer.reconnect();},3000);
+  });
+  S.peer.on('error',e=>peerStatus('err','Hata: '+e.type));
+  S.peer.on('connection',conn=>{if(!S.conn){S.conn=conn;setupConn(conn,'host');}});
+  // Incoming voice call
+  S.peer.on('call',call=>{
+    if(S.micUnlocked&&S.micStream){
+      call.answer(S.micStream);
+      S.voiceCall=call;
+      call.on('stream',rs=>{ensureRemoteAudio().srcObject=rs;toast('🎤 Ses bağlandı!');updateMicBtns();});
+      call.on('close',()=>{hangupVoice();});
+    } else {
+      S._pendingCall=call;
+      toast('📞 Rakip ses aramak istiyor. Mikrofon şifreni gir.');
+    }
+  });
+}
+
+function peerStatus(state,msg){
+  const pill=document.getElementById('peer-status-pill');
+  const banner=document.getElementById('peer-banner');
+  if(!pill)return;
+  const dot=`<span class="conn-dot ${state==='online'?'online':state==='waiting'?'waiting':'err3'}"></span>`;
+  pill.innerHTML=dot+msg;
+  if(banner){banner.className='banner'+(state==='online'?' ok':'');banner.textContent=msg;}
+}
+
+function setupConn(conn,role){
+  conn.on('open',()=>{
+    if(role==='host'){
+      S.onlineColor='w';
+      conn.send({type:'start',hostName:S.profile.username,hostAv:S.profile.avatar});
+      document.getElementById('ov-waiting').classList.remove('active');
+      setTimeout(()=>{startGame('online-real');},400);
+    }
+  });
+  conn.on('data',d=>{
+    if(d.type==='start'){S.onlineColor='b';S.onlineOppName=d.hostName;startGame('online-real');}
+    else if(d.type==='move'){S.gs=applyMove(S.gs,d.move);renderBoard();updateTurnPill();checkEnd();}
+    else if(d.type==='resign'){endGame('🏆 Kazandın!','Rakip pes etti.');}
+  });
+  conn.on('close',()=>{toast('Bağlantı kesildi.');hangupVoice();S.conn=null;if(S.mode==='online-real')goMenu();});
+  conn.on('error',e=>toast('Hata: '+e));
+}
+
+function startVoiceCall(){
+  if(!S.micStream||!S.conn||!S.peer)return;
+  const peerId=S.conn.peer;
+  const call=S.peer.call(peerId,S.micStream);
+  S.voiceCall=call;
+  call.on('stream',rs=>{ensureRemoteAudio().srcObject=rs;toast('🎤 Ses bağlandı!');updateMicBtns();});
+  call.on('close',()=>{hangupVoice();toast('Ses kesildi.');});
+  call.on('error',()=>hangupVoice());
+}
+
+function hangupVoice(){
+  if(S.voiceCall){try{S.voiceCall.close();}catch(e){}S.voiceCall=null;}
+  const a=ensureRemoteAudio();if(a)a.srcObject=null;
+}
+
+/* ========== ROOM CREATE / JOIN ========== */
+document.getElementById('btn-create-room').onclick=()=>{
+  if(!S.peer||S.peer.destroyed){toast('Bağlantı yok.');return;}
+  const roomCode=genId(6);
+  document.getElementById('wait-room-id').textContent=roomCode;
+  document.getElementById('wait-status').textContent='⏳ Rakip bekleniyor...';
+  document.getElementById('ov-waiting').classList.add('active');
+  if(S.peer&&!S.peer.destroyed)S.peer.destroy();
+  S.peer=new Peer('chess-room-'+roomCode,{debug:0});
+  S.peer.on('open',()=>{});
+  S.peer.on('connection',conn=>{S.conn=conn;document.getElementById('wait-status').textContent='✅ Bağlandı!';setupConn(conn,'host');});
+  S.peer.on('call',call=>{
+    if(S.micUnlocked&&S.micStream){call.answer(S.micStream);S.voiceCall=call;call.on('stream',rs=>{ensureRemoteAudio().srcObject=rs;toast('🎤 Ses bağlandı!');});}
+    else{S._pendingCall=call;toast('📞 Rakip ses aramak istiyor.');}
+  });
+  S.peer.on('error',e=>{toast('Hata: '+e.type);document.getElementById('ov-waiting').classList.remove('active');initPeer();});
+};
+document.getElementById('wait-copy-btn').onclick=async()=>{const code=document.getElementById('wait-room-id').textContent;try{await navigator.clipboard.writeText(code);toast('Kopyalandı ✓');}catch(e){toast(code);}};
+document.getElementById('wait-cancel-btn').onclick=()=>{if(S.peer&&!S.peer.destroyed)S.peer.destroy();S.conn=null;document.getElementById('ov-waiting').classList.remove('active');initPeer();};
+document.getElementById('btn-join-room').onclick=()=>{
+  const code=document.getElementById('join-id-input').value.trim().toUpperCase();
+  if(!code){toast('Oda ID gir');return;}
+  toast('Bağlanılıyor...');
+  const conn=S.peer.connect('chess-room-'+code,{reliable:true});
+  S.conn=conn;setupConn(conn,'guest');
+  conn.on('error',e=>{toast('Bağlanamadı.');S.conn=null;});
+};
+document.getElementById('btn-quickmatch').onclick=()=>{toast('Rakip aranıyor...');setTimeout(()=>{toast('Rakip bulundu! (Bot)');S.onlineColor='w';S.onlineOppName='Bot';startGame('online-sim');},800);};
+
+/* ========== MIC ========== */
+document.getElementById('mic-btn').onclick=openMicOverlay;
+document.getElementById('game-mic-btn').onclick=openMicOverlay;
+function openMicOverlay(){document.getElementById('mic-pw-input').value='';document.getElementById('mic-err').style.display='none';document.getElementById('ov-mic').classList.add('active');}
+document.getElementById('mic-cancel').onclick=()=>document.getElementById('ov-mic').classList.remove('active');
+document.getElementById('mic-confirm').onclick=async()=>{
+  const pw=document.getElementById('mic-pw-input').value;
+  if(pw!==MIC_PW){document.getElementById('mic-err').textContent='Üzgünüz, mikrofon açılamadı.';document.getElementById('mic-err').style.display='block';return;}
+  if(S.micUnlocked){
+    if(S.micStream){S.micStream.getTracks().forEach(t=>t.stop());S.micStream=null;}
+    S.micUnlocked=false;hangupVoice();updateMicBtns();toast('Mikrofon kapatıldı.');
+    document.getElementById('ov-mic').classList.remove('active');return;
+  }
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+    S.micStream=stream;S.micUnlocked=true;
+    document.getElementById('ov-mic').classList.remove('active');
+    // Answer pending call or initiate
+    if(S._pendingCall){
+      const call=S._pendingCall;S._pendingCall=null;
+      call.answer(stream);S.voiceCall=call;
+      call.on('stream',rs=>{ensureRemoteAudio().srcObject=rs;toast('🎤 Ses bağlandı!');});
+      call.on('close',()=>{hangupVoice();});
+    } else if(S.mode==='online-real'&&S.conn&&!S.voiceCall){
+      setTimeout(startVoiceCall,500);
+    }
+    updateMicBtns();
+    toast('🎤 Mikrofon açık'+(S.mode==='online-real'?' — ses başlatılıyor...':'.'));
+  }catch(e){
+    document.getElementById('mic-err').textContent='Mikrofon erişimi reddedildi veya desteklenmiyor.';
+    document.getElementById('mic-err').style.display='block';
+  }
+};
+
+/* ========== GAME ========== */
+function startGame(mode){
+  S.mode=mode;S.gs=newGS();S.selSq=null;S.legal=[];
+  document.getElementById('game-mode-label').textContent=
+    mode==='offline-ai'?('🤖 '+{easy:'Kolay',medium:'Orta',hard:'Zor'}[S.diff]):
+    mode==='offline-2p'?'👥 2 Kişilik':
+    mode==='online-real'?'🌐 Online':
+    '🌐 Bot Sim.';
+  const opp2=document.getElementById('online-opp-pill');
+  if(mode==='online-real'||mode==='online-sim'){opp2.style.display='inline-block';opp2.textContent='vs '+(S.onlineOppName||'?');}
+  else opp2.style.display='none';
+  showScreen('sc-game');renderBoard();updateTurnPill();
+}
+function canHumanMove(){
+  if(S.mode==='offline-2p')return true;
+  if(S.mode==='offline-ai')return S.gs.turn==='w';
+  if(S.mode==='online-real'||S.mode==='online-sim')return S.gs.turn===S.onlineColor;
+  return true;
+}
+function renderBoard(){
+  const b=document.getElementById('board');b.innerHTML='';
+  const gs=S.gs,last=gs.lastMove;
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const sq=document.createElement('div');sq.className='sq '+((r+c)%2===0?'light':'dark');
+    if(last&&((last.from[0]===r&&last.from[1]===c)||(last.to[0]===r&&last.to[1]===c)))sq.classList.add('last');
+    const p=gs.board[r][c];
+    if(p){
+      sq.textContent=UNI[p];sq.classList.add(col(p)==='w'?'pw':'pb');
+      // Gold piece style
+      if(S.equipped.piece==='piece_gold')sq.style.color=col(p)==='w'?'#ffd700':'#b8860b';
+      if(S.equipped.piece==='piece_neon')sq.style.color=col(p)==='w'?'#00ff88':'#ff00aa';
+    }
+    if(S.selSq&&S.selSq[0]===r&&S.selSq[1]===c)sq.classList.add('sel2');
+    const mv=S.legal.find(m=>m.to[0]===r&&m.to[1]===c);
+    if(mv){const dot=document.createElement('div');dot.className='dot'+(mv.capture?' cap':'');sq.appendChild(dot);}
+    sq.onclick=()=>onSq(r,c);
+    b.appendChild(sq);
+  }
+  if(inCheck(gs)){const kp=findKing(gs.board,gs.turn);if(kp)b.children[kp[0]*8+kp[1]].classList.add('chk');}
+  // frame effect
+  const boardEl=document.getElementById('board');
+  if(S.equipped.frame==='frame_fire')boardEl.style.boxShadow='0 0 20px #ff4400, 0 0 40px #ff6600';
+  else if(S.equipped.frame==='frame_ice')boardEl.style.boxShadow='0 0 20px #00aaff, 0 0 40px #0066cc';
+  else boardEl.style.boxShadow='0 8px 30px rgba(0,0,0,.5)';
+}
+function onSq(r,c){
+  if(!canHumanMove())return;
+  const gs=S.gs,st=gameStatus(gs);
+  if(st==='mate'||st==='stalemate')return;
+  const p=gs.board[r][c];
+  if(S.selSq){
+    const mv=S.legal.find(m=>m.to[0]===r&&m.to[1]===c);
+    if(mv){if(mv.promo){openPromo(mv,ch=>{const fm=S.legal.find(m=>m.to[0]===r&&m.to[1]===c&&m.promo===ch);commitMove(fm);});return;}commitMove(mv);return;}
+    if(p&&col(p)===gs.turn){S.selSq=[r,c];S.legal=legalMoves(gs).filter(m=>m.from[0]===r&&m.from[1]===c);renderBoard();return;}
+    S.selSq=null;S.legal=[];renderBoard();return;
+  }
+  if(p&&col(p)===gs.turn){S.selSq=[r,c];S.legal=legalMoves(gs).filter(m=>m.from[0]===r&&m.from[1]===c);renderBoard();}
+}
+function openPromo(mv,cb){const ov=document.getElementById('ov-promo'),wrap=document.getElementById('promo-choices');wrap.innerHTML='';for(const q of['Q','R','B','N']){const d=document.createElement('div');d.className='sq';d.textContent=UNI[col(mv.piece)+q];d.onclick=()=>{ov.classList.remove('active');cb(q);};wrap.appendChild(d);}ov.classList.add('active');}
+function commitMove(mv){
+  S.gs=applyMove(S.gs,mv);S.selSq=null;S.legal=[];
+  if(S.mode==='online-real'&&S.conn)S.conn.send({type:'move',move:mv});
+  renderBoard();updateTurnPill();checkEnd();
+  const needAI=(S.mode==='offline-ai'&&S.gs.turn==='b')||(S.mode==='online-sim'&&S.gs.turn!==S.onlineColor);
+  if(!isGameOver()&&needAI)setTimeout(()=>{const m=aiMove(S.gs,S.diff);if(m)commitMove(m);},450);
+}
+function isGameOver(){const st=gameStatus(S.gs);return st==='mate'||st==='stalemate';}
+function updateTurnPill(){
+  const st=gameStatus(S.gs),pill=document.getElementById('turn-pill');
+  const ml=document.getElementById('move-list');
+  ml.innerHTML=S.gs.history.map((m,i)=>{const f=FILES[m.from[1]]+(8-m.from[0]),t=FILES[m.to[1]]+(8-m.to[0]);return(i%2===0?Math.floor(i/2+1)+'. ':'')+f+'-'+t+(m.promo?'='+m.promo:'')+' ';}).join('');
+  ml.scrollTop=ml.scrollHeight;
+  if(st==='mate')pill.textContent='♛ Şah mat!';
+  else if(st==='stalemate')pill.textContent='🤝 Pat!';
+  else pill.textContent=(S.gs.turn==='w'?'⚪':'⚫')+(st==='check'?' Şah!':' oynuyor');
+}
+function checkEnd(){if(isGameOver())setTimeout(showGameOver,400);}
+function showGameOver(){
+  const st=gameStatus(S.gs);let title,sub='',won=false;
+  if(st==='stalemate'){title='🤝 Pat! Berabere.';S.stats.draws++;saveStats();}
+  else{
+    const winner=opp(S.gs.turn);
+    if(S.mode==='offline-2p'){title=(winner==='w'?'⚪':'⚫')+' Kazandı!';}
+    else if(S.mode==='online-real'){
+      won=winner===S.onlineColor;
+      title=won?'🏆 Kazandın!':'💔 Kaybettin.';sub='Şah mat!';
+    } else {
+      won=winner==='w';
+      title=won?'🏆 Kazandın!':'💔 Kaybettin.';sub='Şah mat!';
+    }
+    if(won){S.stats.wins++;addWin();}
+    else if(S.mode!=='offline-2p'){S.stats.losses++;saveStats();}
+  }
+  document.getElementById('go-title').textContent=title;
+  document.getElementById('go-sub').textContent=sub;
+  document.getElementById('go-reward').innerHTML=won?'<div style="color:var(--gold);font-size:1.1rem;">+10 🪙 kazandın!</div>':'';
+  document.getElementById('ov-gameover').classList.add('active');
+}
+function endGame(title,sub){S.stats.wins++;addWin();document.getElementById('go-title').textContent=title;document.getElementById('go-sub').textContent=sub;document.getElementById('go-reward').innerHTML='<div style="color:var(--gold);">+10 🪙</div>';document.getElementById('ov-gameover').classList.add('active');}
+document.getElementById('btn-resign').onclick=()=>{
+  if(S.mode==='online-real'&&S.conn)S.conn.send({type:'resign'});
+  S.stats.losses++;saveStats();
+  document.getElementById('go-title').textContent='💔 Pes Ettin.';
+  document.getElementById('go-sub').textContent='';
+  document.getElementById('go-reward').innerHTML='';
+  document.getElementById('ov-gameover').classList.add('active');
+};
+document.getElementById('btn-new-game').onclick=()=>startGame(S.mode);
+document.getElementById('go-menu-btn').onclick=()=>{document.getElementById('ov-gameover').classList.remove('active');goMenu();};
+document.getElementById('go-chat-btn').onclick=()=>{document.getElementById('ov-gameover').classList.remove('active');openFriends();setTab('friends');};
+document.getElementById('btn-vs-ai').onclick=()=>showScreen('sc-diff');
+document.getElementById('diff-start').onclick=()=>startGame('offline-ai');
+document.getElementById('btn-2p').onclick=()=>startGame('offline-2p');
+document.querySelectorAll('.diff-btn').forEach(btn=>{btn.onclick=()=>{document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('sel3'));btn.classList.add('sel3');S.diff=btn.dataset.d;};});
+
+/* ========== PROFILE ========== */
+let pendingAvEdit=AVATARS[0];
+function openProfile(){
+  showScreen('sc-profile');setTab('profile');
+  pendingAvEdit=S.profile.avatar;
+  document.getElementById('prof-name-input').value=S.profile.username;
+  setAv(document.getElementById('prof-av-big'),S.profile.avatar);
+  document.getElementById('prof-friend-id').textContent=S.profile.fid||'------';
+  renderAvGrid('prof-av-grid',pendingAvEdit,av=>{pendingAvEdit=av;setAv(document.getElementById('prof-av-big'),av);});
+  document.getElementById('prof-stats').innerHTML=
+    `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
+      <div><div style="font-size:1.4rem;font-weight:700;color:var(--accent2)">${S.stats.wins}</div><div class="muted">Kazanma</div></div>
+      <div><div style="font-size:1.4rem;font-weight:700;color:var(--danger)">${S.stats.losses}</div><div class="muted">Kaybetme</div></div>
+      <div><div style="font-size:1.4rem;font-weight:700;color:var(--gold)">${S.stats.draws}</div><div class="muted">Berabere</div></div>
+    </div>
+    <div style="margin-top:10px;" class="muted">Seviye ${Math.floor(S.level)} · ${S.coins} 🪙</div>`;
+}
+document.getElementById('prof-gallery-btn').onclick=()=>document.getElementById('prof-gallery-file').click();
+document.getElementById('prof-gallery-file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{pendingAvEdit=r.result;setAv(document.getElementById('prof-av-big'),r.result);document.querySelectorAll('#prof-av-grid .av-opt').forEach(x=>x.classList.remove('sel'));};r.readAsDataURL(f);e.target.value='';});
+document.getElementById('prof-save').onclick=()=>{
+  const name=document.getElementById('prof-name-input').value.trim();
+  const err=document.getElementById('prof-err');
+  if(!validName(name)){err.textContent='Geçersiz ad (3-18 karakter)';err.style.display='block';return;}
+  if(name.toLowerCase()!==S.profile.username.toLowerCase()&&usedNames().includes(name.toLowerCase())){err.textContent='Bu ad alınmış.';err.style.display='block';return;}
+  err.style.display='none';S.profile.username=name;S.profile.avatar=pendingAvEdit;saveProfile();regName(name);
+  setAv(document.getElementById('menu-av'),S.profile.avatar);document.getElementById('menu-name').textContent=S.profile.username;
+  toast('Kaydedildi ✓');
+};
+document.getElementById('prof-copy-id').onclick=async()=>{try{await navigator.clipboard.writeText(S.profile.fid||'');toast('Kopyalandı ✓');}catch(e){toast(S.profile.fid||'');}};
+document.getElementById('prof-regen-id').onclick=()=>{S.profile.fid=genId(6);saveProfile();document.getElementById('prof-friend-id').textContent=S.profile.fid;document.getElementById('friends-own-id').textContent=S.profile.fid;toast('Yeni ID: '+S.profile.fid);};
+
+/* ========== FRIENDS ========== */
+let pendingAfAv=AVATARS[0];
+function openFriends(){
+  showScreen('sc-friends');setTab('friends');
+  document.getElementById('friends-own-id').textContent=S.profile.fid||'------';
+  renderFriends('');
+}
+function renderFriends(q){
+  const list=document.getElementById('friends-list');list.innerHTML='';
+  const hint=document.getElementById('no-friends-hint');
+  const filtered=q?S.friends.filter(f=>f.name.toLowerCase().includes(q.toLowerCase())):S.friends;
+  hint.style.display=filtered.length?'none':'block';
+  filtered.forEach(f=>{
+    const thread=S.chats[f.id]||[],last=thread[thread.length-1];
+    const lastTxt=last?(last.type==='img'?'📷 Fotoğraf':last.content):'';
+    const item=document.createElement('div');item.className='friend-item';
+    const avEl=document.createElement('div');avEl.className='av';avEl.style.cssText='width:42px;height:42px;font-size:1.5rem;';setAv(avEl,f.avatar);
+    const info=document.createElement('div');info.style.cssText='flex:1;min-width:0;';
+    const n=document.createElement('div');n.className='fi-name';n.textContent=f.name;
+    const l=document.createElement('div');l.className='fi-last';l.textContent=lastTxt;
+    info.appendChild(n);info.appendChild(l);item.appendChild(avEl);item.appendChild(info);
+    item.onclick=()=>openChat(f.id);list.appendChild(item);
+  });
+}
+// Search with debounce
+let searchTimer=null;
+document.getElementById('friend-search').addEventListener('input',e=>{
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(()=>renderFriends(e.target.value),300);
+});
+document.getElementById('friends-copy-btn').onclick=async()=>{try{await navigator.clipboard.writeText(S.profile.fid||'');toast('Kopyalandı ✓');}catch(e){toast(S.profile.fid||'');}};
+document.getElementById('friends-add-btn').onclick=()=>{
+  document.getElementById('af-name-input').value='';document.getElementById('af-err').style.display='none';
+  pendingAfAv=AVATARS[Math.floor(Math.random()*AVATARS.length)];
+  renderAvGrid('af-av-grid',pendingAfAv,av=>pendingAfAv=av);
+  document.getElementById('ov-add-friend').classList.add('active');
+};
+document.getElementById('af-cancel').onclick=()=>document.getElementById('ov-add-friend').classList.remove('active');
+document.getElementById('af-confirm').onclick=()=>{
+  const name=document.getElementById('af-name-input').value.trim();
+  const err=document.getElementById('af-err');
+  if(!name){err.textContent='Ad boş olamaz.';err.style.display='block';return;}
+  if(name.toLowerCase()===S.profile.username.toLowerCase()){err.textContent='Kendini ekleyemezsin.';err.style.display='block';return;}
+  err.style.display='none';
+  const id='f-'+genId(8);S.friends.push({id,name,avatar:pendingAfAv});S.chats[id]=[];
+  saveFriends();saveChats();document.getElementById('ov-add-friend').classList.remove('active');renderFriends('');
+  toast(name+' eklendi ✓');
+};
+
+/* ========== CHAT ========== */
+function openChat(fid){
+  S.currentFriendId=fid;const f=S.friends.find(x=>x.id===fid);if(!f)return;
+  setAv(document.getElementById('chat-friend-av'),f.avatar);
+  document.getElementById('chat-friend-name').textContent=f.name;
+  renderChat();showScreen('sc-chat');setTab('friends');
+}
+function renderChat(){
+  const box=document.getElementById('chat-box');box.innerHTML='';
+  const thread=S.chats[S.currentFriendId]||[];
+  thread.forEach(m=>{const div=document.createElement('div');div.className='msg '+(m.me?'me':'them');if(m.type==='img'){const img=document.createElement('img');img.src=m.content;div.appendChild(img);}else div.textContent=m.content;box.appendChild(div);});
+  box.scrollTop=box.scrollHeight;
+}
+document.getElementById('chat-send-btn').onclick=sendMsg;
+document.getElementById('chat-input').addEventListener('keydown',e=>{if(e.key==='Enter')sendMsg();});
+function sendMsg(){
+  if(!S.currentFriendId)return;
+  const inp=document.getElementById('chat-input'),raw=inp.value.trim();if(!raw)return;
+  const fid=S.currentFriendId;if(!S.chats[fid])S.chats[fid]=[];
+  S.chats[fid].push({type:'text',content:filt(raw),me:true});saveChats();inp.value='';renderChat();
+  setTimeout(()=>{if(!S.chats[fid])return;const r=['İyi oyundu! ♟️','GG!','Güzel hamle 👍','Tekrar oynayalım!'][Math.floor(Math.random()*4)];S.chats[fid].push({type:'text',content:r,me:false});saveChats();if(S.currentFriendId===fid)renderChat();},700+Math.random()*500);
+}
+document.getElementById('chat-img-btn').onclick=()=>document.getElementById('chat-img-file').click();
+document.getElementById('chat-img-file').addEventListener('change',e=>{
+  const file=e.target.files[0];if(!file||!S.currentFriendId)return;
+  const fid=S.currentFriendId,r=new FileReader();
+  r.onload=()=>{if(!S.chats[fid])S.chats[fid]=[];S.chats[fid].push({type:'img',content:r.result,me:true});saveChats();renderChat();};
+  r.readAsDataURL(file);e.target.value='';
+});
+
+/* ========== LANGUAGE ========== */
+function renderLangList(q){
+  const list=document.getElementById('lang-list');list.innerHTML='';
+  const f=q.toLowerCase();
+  const tr2=LANGS_LIST.find(l=>l.code==='tr');
+  const trEl=document.createElement('div');trEl.className='lang-item pinned'+(S.lang==='tr'?' active':'');trEl.textContent=tr2.name;trEl.onclick=()=>setLang('tr');list.appendChild(trEl);
+  LANGS_LIST.filter(l=>l.code!=='tr'&&(!f||l.name.toLowerCase().includes(f)||l.code.includes(f))).forEach(l=>{const el=document.createElement('div');el.className='lang-item'+(S.lang===l.code?' active':'');el.textContent=l.name;el.onclick=()=>setLang(l.code);list.appendChild(el);});
+}
+function setLang(code){S.lang=code;localStorage.setItem('ch_lang',code);document.getElementById('ov-lang').classList.remove('active');document.getElementById('cur-lang').textContent=LANGS_LIST.find(l=>l.code===code)?.name||code;toast('Dil değiştirildi.');}
+document.getElementById('btn-lang').onclick=()=>{document.getElementById('lang-search').value='';renderLangList('');document.getElementById('ov-lang').classList.add('active');};
+document.getElementById('lang-close').onclick=()=>document.getElementById('ov-lang').classList.remove('active');
+document.getElementById('lang-search').addEventListener('input',e=>renderLangList(e.target.value));
+
+/* ========== ONBOARDING ========== */
+let pendingObAv=AVATARS[0];
+function initOnboard(){
+  setAv(document.getElementById('ob-av-preview'),pendingObAv);
+  renderAvGrid('ob-av-grid',pendingObAv,av=>{pendingObAv=av;setAv(document.getElementById('ob-av-preview'),av);});
+  document.getElementById('ob-gallery-btn').onclick=()=>document.getElementById('ob-gallery-file').click();
+  document.getElementById('ob-gallery-file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{pendingObAv=r.result;setAv(document.getElementById('ob-av-preview'),r.result);document.querySelectorAll('#ob-av-grid .av-opt').forEach(x=>x.classList.remove('sel'));};r.readAsDataURL(f);e.target.value='';});
+  document.getElementById('ob-save').onclick=()=>{
+    const name=document.getElementById('ob-name').value.trim();const err=document.getElementById('ob-err');
+    if(!validName(name)){err.textContent='Geçersiz ad (3-18 karakter, harf/rakam/_/./-)';err.style.display='block';return;}
+    if(usedNames().includes(name.toLowerCase())){err.textContent='Bu kullanıcı adı alınmış.';err.style.display='block';return;}
+    err.style.display='none';S.profile={username:name,avatar:pendingObAv,fid:genId(6)};saveProfile();regName(name);
+    startApp();
+  };
+}
+
+/* ========== SPLASH ANIMATION ========== */
+function runSplash(cb){
+  const canvas=document.getElementById('splash-canvas');
+  const ctx=canvas.getContext('2d');
+  const W=160,H=160;
+  let t=0,phase='head'; // phases: head -> square -> fadeout
+  let sqSize=0,opacity=1;
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    if(phase==='head'||phase==='square'){
+      // Draw square growing around head
+      const sq=phase==='square'?sqSize:0;
+      if(sq>0){
+        ctx.fillStyle='#4f8cff';
+        const x=(W-sq)/2,y=(H-sq)/2;
+        const r=sq*0.15;
+        ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+sq-r,y);ctx.quadraticCurveTo(x+sq,y,x+sq,y+r);
+        ctx.lineTo(x+sq,y+sq-r);ctx.quadraticCurveTo(x+sq,y+sq,x+sq-r,y+sq);
+        ctx.lineTo(x+r,y+sq);ctx.quadraticCurveTo(x,y+sq,x,y+sq-r);
+        ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();ctx.fill();
+      }
+      // Draw knight head (just the top part - head only visible in frame)
+      ctx.font='bold 90px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      // clip to show only top 55% (the head)
+      ctx.save();
+      ctx.beginPath();ctx.rect(0,0,W,H*0.62);ctx.clip();
+      ctx.globalAlpha=opacity;
+      ctx.fillStyle='#ffffff';
+      ctx.fillText('♞',W/2,H*0.52);
+      ctx.restore();
+    }
+    if(phase==='fadeout'){
+      ctx.globalAlpha=opacity;
+      ctx.fillStyle='#4f8cff';ctx.fillRect(0,0,W,H);
+      ctx.globalAlpha=opacity;ctx.font='bold 90px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillStyle='#ffffff';ctx.fillText('♞',W/2,H*0.52);
+      ctx.globalAlpha=1;
+    }
+  }
+
+  function animate(){
+    t++;
+    if(phase==='head'&&t<40){draw();requestAnimationFrame(animate);}
+    else if(phase==='head'){phase='square';t=0;requestAnimationFrame(animate);}
+    else if(phase==='square'&&t<30){sqSize=Math.min(140,(t/30)*140);draw();requestAnimationFrame(animate);}
+    else if(phase==='square'){phase='wait';t=0;sqSize=140;draw();setTimeout(()=>{phase='fadeout';t=0;animateFade();},400);}
+  }
+  function animateFade(){
+    opacity=Math.max(0,1-t/20);draw();t++;
+    if(opacity>0)requestAnimationFrame(animateFade);
+    else{document.getElementById('splash').style.display='none';document.getElementById('app').style.display='flex';cb();}
+  }
+  draw();animate();
+}
+
+/* ========== INIT ========== */
+function startApp(){
+  applyEquipped();
+  if(S.profile){
+    goMenu();
+    initPeer();
+  } else {
+    showScreen('sc-onboard');
+    initOnboard();
+  }
+  document.getElementById('cur-lang').textContent=LANGS_LIST.find(l=>l.code===S.lang)?.name||S.lang;
+  updateMenuStats();
+}
+
+load();
+runSplash(startApp);
+</script>
+</body>
+</html>
